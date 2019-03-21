@@ -1,0 +1,332 @@
+<form>
+  <label>proj-sta-2019: Server error overview</label>
+  <description>The purpose of this board is to give an overview of server errors in general or during an AST run. If you have any questions or ideas for improvement, contact DIPS-MAE.</description>
+  <init>
+    <set token="tokEarliestTime">-</set>
+    <set token="tokLatestTime">-</set>
+    <set token="title"></set>
+  </init>
+  <!-- Base search used for most of the panels on the board -->
+  <search id="base_search">
+    <query>
+      index=* $applicationId$ logLevel="[ERROR]" $extraQuery$ NOT applicationId=0
+      | dedup _raw
+      | fillnull value="NA" host 
+      | fillnull value="NA" environment 
+      | search $host$ $environment$
+      | fillnull value="NA" applicationName 
+      | table index applicationName environment host logger message _time
+    </query>
+  </search>
+  <!-- Dummy search to pull selected time range earliest and latest date/time -->
+  <search>
+    <query> | makeresults</query>
+    <done>
+      <eval token="title">if(isnull(urlTitle),"",urlTitle)</eval>
+      <eval token="tokEarliestTime">strftime(strptime($job.earliestTime$,"%Y/%m/%dT%H:%M:%S.%3N"),"%d.%m %H:%M")</eval>
+      <eval token="tokLatestTime">strftime(strptime($job.latestTime$,"%Y/%m/%dT%H:%M:%S.%3N"),"%d.%m %H:%M")</eval>
+    </done>
+  </search>
+  <!-- Search that sets earliest and latest time when selecting AST run -->
+  <search>
+    <query>
+      | inputlookup DIPS-ast.csv | search name="$ast$"
+      | eval from = strptime(from, "%m/%d/%Y:%H:%M:%S")
+      | eval to = strptime(to, "%m/%d/%Y:%H:%M:%S")
+    </query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+    <done>
+      <condition match=" 'job.resultCount' != 0">
+        <set token="urlTitle">$result.name$ -</set>
+        <set token="earliest">$result.from$</set>
+        <set token="latest">$result.to$</set>
+        <set token="form.environment">$result.environment$</set>
+      </condition>
+    </done>
+  </search>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="dropdown" token="ast" searchWhenChanged="true">
+      <label>Configure for AST run</label>
+      <fieldForLabel>name</fieldForLabel>
+      <fieldForValue>name</fieldForValue>
+      <search>
+        <query>| inputlookup DIPS-ast.csv</query>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="time" searchWhenChanged="true">
+      <label>Select time range</label>
+      <default>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </default>
+      <change>
+        <condition>
+          <unset token="form.ast"></unset>
+        </condition>
+      </change>
+    </input>
+    <input type="dropdown" token="environment" searchWhenChanged="true">
+      <label>Environment</label>
+      <choice value="">All</choice>
+      <default></default>
+      <search>
+        <query>index=* logLevel="[ERROR]" | fillnull value="NA" environment | dedup environment | sort - environment | table environment </query>
+      </search>
+      <fieldForLabel>environment</fieldForLabel>
+      <fieldForValue>environment</fieldForValue>
+      <change>
+        <condition label="All">
+          <set token="show_count_by_environment">true</set>
+        </condition>
+        <condition>
+          <unset token="show_count_by_environment"></unset>
+        </condition>
+      </change>
+      <prefix>environment="</prefix>
+      <suffix>"</suffix>
+    </input>
+    <input type="dropdown" token="host" searchWhenChanged="true">
+      <label>Host</label>
+      <choice value="">All</choice>
+      <search>
+        <query>index=* logLevel="[ERROR]" | dedup host | sort - host | table host</query>
+      </search>
+      <fieldForLabel>host</fieldForLabel>
+      <fieldForValue>host</fieldForValue>
+      <prefix>host="</prefix>
+      <suffix>"</suffix>
+      <default></default>
+      <change>
+        <condition label="All">
+          <set token="show_count_by_host">true</set>
+        </condition>
+        <condition>
+          <unset token="show_count_by_host"></unset>
+        </condition>
+      </change>
+    </input>
+    <input type="dropdown" token="applicationId" searchWhenChanged="true">
+      <label>Application</label>
+      <choice value="">All</choice>
+      <search>
+        <query>index=* logLevel="[ERROR]" | fields applicationName applicationId | dedup applicationId | sort applicationName</query>
+      </search>
+      <fieldForLabel>applicationName</fieldForLabel>
+      <fieldForValue>applicationId</fieldForValue>
+      <prefix>applicationId="</prefix>
+      <suffix>"</suffix>
+      <default></default>
+    </input>
+    <input type="text" token="extraQuery" searchWhenChanged="true">
+      <label>Search</label>
+      <default></default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>$title$ $tokEarliestTime$ to $tokLatestTime$</title>
+    </panel>
+  </row>
+  <row>
+    <panel id="errorCount">
+      <single>
+        <title>Total error count for timerange</title>
+        <search base="base_search">
+          <query>stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="useColors">0</option>
+      </single>
+      <html>
+        <style>
+          #errorCount{
+            width:10% !important;
+          }
+        </style>
+      </html>
+    </panel>
+    <panel id="errorByAppTimeline">
+      <chart depends="$show_count_by_environment$">
+        <title>Error messages timeline pr environment</title>
+        <search base="base_search">
+          <query>timechart count by environment</query>
+        </search>
+        <option name="height">350</option>
+      </chart>
+      <chart depends="$show_count_by_host$">
+        <title>Error messages timeline pr host</title>
+        <search base="base_search">
+          <query> | timechart count by host</query>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">all</option>
+        <option name="height">350</option>
+      </chart>
+      <chart>
+        <title>Error messages timeline pr application</title>
+        <search base="base_search">
+          <query> | timechart count by applicationName</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="height">350</option>
+      </chart>
+      <html>
+        <style>
+          #errorByAppTimeline{
+            width:70% !important;
+          }
+        </style>
+      </html>
+    </panel>
+    <panel id="errorByAppCount">
+      <chart depends="$show_count_by_environment$">
+        <title>Error count by environment</title>
+        <search base="base_search">
+          <query> | stats count by environment</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">all</option>
+        <option name="height">350</option>
+      </chart>
+      <chart depends="$show_count_by_host$">
+        <title>Error count by host</title>
+        <search base="base_search">
+          <query> | stats count by host</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">all</option>
+        <option name="height">350</option>
+      </chart>
+      <table>
+        <title>Error count by application</title>
+        <search base="base_search">
+          <query> | stats count by applicationName | sort -num(count)</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+      <html>
+        <style>
+          #errorByAppCount{
+            width:20% !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="errorCountByLogger">
+      <table>
+        <title>Error count by logger</title>
+        <search base="base_search">
+          <query> | stats count by logger | sort -num(count) | eval details="click me"</query>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">cell</option>
+        <drilldown>
+          <condition field="details">
+            <link target="_blank">/app/search/projsta2019_error_context_and_analysis?earliest=$earliest$&amp;latest=$latest$&amp;form.extra_query=logger%3D$row.logger$</link>
+          </condition>
+          <condition>
+            <!-- No Drilldown on Other Columns -->
+          </condition>
+        </drilldown>
+      </table>
+      <html>
+        <style>
+          #errorCountByLogger {
+            width:40% !important;
+          }
+          #errorCountByLogger td {
+            color: #000000; !important;
+          }
+        </style>
+      </html>
+    </panel>
+    <panel id="errorCountByWcfInterface">
+      <table>
+        <title>Error count by WCF server interface</title>
+        <search base="base_search">
+          <query> | rex field=message "^Wcf/Server/(?&lt;WcfInterface&gt;\w+)/" | stats count by WcfInterface | sort -num(count) | eval details="click me"</query>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">cell</option>
+        <drilldown>
+          <condition field="details">
+            <link target="_blank">/app/search/projsta2019_error_context_and_analysis?earliest=$earliest$&amp;latest=$latest$&amp;form.extra_query=$row.WcfInterface$</link>
+          </condition>
+          <condition>
+            <!-- No Drilldown on Other Columns -->
+          </condition>
+        </drilldown>
+      </table>
+      <html>
+        <style>
+          #errorCountByWcfInterface {
+            width:20% !important;
+          }
+          #errorCountByWcfInterface td {
+            color: #000000; !important;
+          }
+        </style>
+      </html>
+    </panel>
+    <panel id="errorCountByMessage">
+      <table>
+        <title>Error count by identical messages</title>
+        <search base="base_search">
+          <query>| eval shortMessage=if(len(message)&gt;80, substr(message,1,80)+"...", message) | stats count by shortMessage | sort -num(count) | eval details="click me"</query>
+        </search>
+        <option name="drilldown">cell</option>
+        <drilldown>
+          <condition field="details">
+            <eval token="searchMessage">replace($row.shortMessage$, "\\\\", "\\\\")</eval>
+            <eval token="searchMessage">substr($searchMessage$, 1, len($searchMessage$)-3)</eval>
+            <link target="_blank">/app/search/projsta2019_error_context_and_analysis?earliest=$earliest$&amp;latest=$latest$&amp;form.extra_query="*$searchMessage$*"</link>
+          </condition>
+          <condition>
+            <!-- No Drilldown on Other Columns -->
+          </condition>
+        </drilldown>
+      </table>
+      <html>
+        <style>
+          #errorCountByMessage {
+            width:40% !important;
+          }
+          #errorCountByMessage td {
+            color: #000000; !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <event>
+        <title>Message</title>
+        <search base="base_search"></search>
+        <fields>["host","index","applicationName"]</fields>
+        <option name="count">10</option>
+        <option name="list.drilldown">full</option>
+        <option name="list.wrap">1</option>
+        <option name="maxLines">5</option>
+        <option name="raw.drilldown">full</option>
+        <option name="rowNumbers">0</option>
+        <option name="table.drilldown">all</option>
+        <option name="table.wrap">1</option>
+        <option name="type">list</option>
+      </event>
+    </panel>
+  </row>
+</form>

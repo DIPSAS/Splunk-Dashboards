@@ -1,0 +1,212 @@
+<form>
+  <label>proj-sta-2019: Error context and analysis</label>
+  <description>This board is meant to help teams get more context from an error to help analyze the root of the problem. If you have any questions or ideas for improvement, contact DIPS-MAE.</description>
+  <!-- Independent Search for setting relative time based on clicked time-->
+  <search>
+    <query>
+      | makeresults
+      | eval clickedEventTimeA=strptime("$clickedEventTime$","%Y-%m-%dT%H:%M:%S.%Q")
+      | eval adjEarliestTime=relative_time(clickedEventTimeA,"-$offset$s")
+      | eval adjLatestTime=relative_time(clickedEventTimeA,"+$offset$s")
+      | eval adjEarliestTimeString=strftime(adjEarliestTime,"%m.%d.%H:%M:%S")
+      | eval adjLatestTimeString=strftime(adjLatestTime,"%m.%d.%H:%M:%S")
+    </query>
+    <done>
+      <condition match=" 'job.resultCount' != 0">
+        <set token="form.errorContextTimerange.earliest">$result.adjEarliestTime$</set>
+        <set token="form.errorContextTimerange.latest">$result.adjLatestTime$</set>
+        <set token="adjEarliestTimeString">$result.adjEarliestTimeString$</set>
+        <set token="adjLatestTimeString">$result.adjLatestTimeString$</set>
+      </condition>
+    </done>
+  </search>
+  <!-- Search that sets earliest and latest time when selecting AST run -->
+  <search>
+    <query>
+      | inputlookup DIPS-ast.csv | search name="$ast$"
+      | eval from = strptime(from, "%m/%d/%Y:%H:%M:%S")
+      | eval to = strptime(to, "%m/%d/%Y:%H:%M:%S")
+    </query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+    <done>
+      <condition match=" 'job.resultCount' != 0">
+        <set token="urlTitle">$result.name$ -</set>
+        <set token="earliest">$result.from$</set>
+        <set token="latest">$result.to$</set>
+        <set token="form.environment">$result.environment$</set>
+      </condition>
+    </done>
+  </search>
+  <fieldset submitButton="false">
+    <input type="dropdown" token="ast" searchWhenChanged="true">
+      <label>Configure for AST run</label>
+      <fieldForLabel>name</fieldForLabel>
+      <fieldForValue>name</fieldForValue>
+      <search>
+        <query>| inputlookup DIPS-ast.csv</query>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="time">
+      <label>Time range</label>
+      <default>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="text" token="extra_query">
+      <label>Search</label>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>All ERRORS for give timeframe</title>
+      <event>
+        <title>Click on an ERROR in this list to analyse it under (must click on error text). Use the "Search" field above to search for specific errors.</title>
+        <search>
+          <query>
+            index=* logLevel="[ERROR]" $extra_query$ 
+            | dedup _raw
+            | fields *</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <fields>["host","index","applicationName","userId","sessionId","environment","logger"]</fields>
+        <option name="count">10</option>
+        <option name="list.drilldown">full</option>
+        <option name="raw.drilldown">full</option>
+        <option name="table.drilldown">all</option>
+        <option name="type">list</option>
+        <drilldown>
+          <set token="form.clickedEventTime">$row._time$</set>
+          <eval token="form.sessionId">case(isnull($row.sessionId$), "*", $row.sessionId$=="(null)", "*", true(), $row.sessionId$)</eval>
+        </drilldown>
+      </event>
+    </panel>
+  </row>
+  <row depends="$sessionId$">
+    <panel>
+      <title>ERROR context and analysis ($adjEarliestTimeString$ - $adjLatestTimeString$)</title>
+      <!-- TODO: add all context filters  -->
+      <input type="text" token="clickedEventTime">
+        <label>Time for selected ERROR</label>
+      </input>
+      <input type="text" token="offset">
+        <label>Offset (+-sec)</label>
+        <default>70</default>
+      </input>
+      <input type="time" token="errorContextTimerange">
+        <label>ERROR context timerange</label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="text" token="sessionId">
+        <label>Session ID</label>
+      </input>
+      <table>
+        <title>Combined log</title>
+        <search>
+          <query>index=application_log sessionId=$sessionId$
+            | dedup _raw
+            | eval logSource=if(applicationId==0,"Client","Server")
+            | eval logSourceFrom=if(applicationId==0,userId,applicationName)
+            | eval time=strftime(_time,"%H:%M:%S:%Q")
+            | eval message=if(len(message) &gt; 500, substr(message,1,500)+"...", message)
+            | sort _time 
+            | table time, logLevel, message, logSource, logSourceFrom, logger</query>
+          <earliest>$errorContextTimerange.earliest$</earliest>
+          <latest>$errorContextTimerange.latest$</latest>
+        </search>
+        <option name="count">50</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+        <format type="color" field="logLevel">
+          <colorPalette type="map">{"[INFO]":#6DB7C6,"[ERROR]":#D93F3C,"[WARN]":#F7BC38,"[FATAL]":#6A5C9E,"[DEBUG]":#A2CC3E}</colorPalette>
+        </format>
+        <format type="color" field="logSource">
+          <colorPalette type="map">{"Client":#F89450,"Server":#999999}</colorPalette>
+        </format>
+      </table>
+      <event>
+        <title>Client log events (click on event with profiling call ID to get profiling log)</title>
+        <search>
+          <query>
+            index=application_log applicationId=0 $sessionId$ 
+            | dedup _raw
+            | fields * 
+            | sort _time
+          </query>
+          <earliest>$errorContextTimerange.earliest$</earliest>
+          <latest>$errorContextTimerange.latest$</latest>
+        </search>
+        <fields>["userId","logger","profilingCallId"]</fields>
+        <option name="list.drilldown">full</option>
+        <option name="type">list</option>
+        <drilldown>
+          <set token="form.rootCallId">$row.profilingCallId$</set>
+        </drilldown>
+      </event>
+      <event>
+        <title>Server log events (click on event with profiling call ID to get profiling log)</title>
+        <search>
+          <query>index=application_log applicationId!=0 $sessionId$ | fields * | sort _time</query>
+          <earliest>$errorContextTimerange.earliest$</earliest>
+          <latest>$errorContextTimerange.latest$</latest>
+        </search>
+        <fields>["host","applicationName","logger","profilingCallId"]</fields>
+        <option name="list.drilldown">full</option>
+        <drilldown>
+          <set token="form.rootCallId">$row.profilingCallId$</set>
+        </drilldown>
+      </event>
+    </panel>
+  </row>
+  <row depends="$rootCallId$">
+    <panel>
+      <title>Profiling log</title>
+      <input type="text" token="rootCallId">
+        <label>Profiling call ID</label>
+      </input>
+      <input type="dropdown" token="depth">
+        <label>Depth</label>
+        <choice value="0">0</choice>
+        <choice value="1">1</choice>
+        <choice value="2">2</choice>
+        <choice value="3">3</choice>
+        <choice value="4">4</choice>
+        <choice value="5">5</choice>
+        <default>1</default>
+      </input>
+      <event>
+        <search>
+          <query>index=application_profiling rootCallId=$rootCallId$ callLevel&lt;=$depth$ | fields * | sort _time</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <fields>["callLevel","contextName","ellapsed","rootCallId","currentCallId"]</fields>
+        <option name="count">20</option>
+        <option name="type">list</option>
+      </event>
+    </panel>
+  </row>
+  <row depends="$hidden_token$">
+    <panel>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel h2.panel-title {
+            font-size: 20px !important;
+          }
+          .dashboard-row {
+            padding-bottom: 30px !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+</form>
