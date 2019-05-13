@@ -1,0 +1,216 @@
+<form theme="light" refresh="300">
+  <label>proj-sta-2019: Environment status overview</label>
+  <description>This board aims to give an overview of the status of the different test environments for Arena. The board will auto refresh every 5 minutes.</description>
+  <search id="base_search">
+    <query>
+      index=application_status | dedup _raw 
+      | table env service.name ping.httpStatusCode ping.last healthResponse.health* _time 
+      | rename env as Environmen, service.name as Service
+    </query>
+  </search>
+  <fieldset submitButton="false" autoRun="false">
+    <input type="time" searchWhenChanged="true">
+      <label>Timeframe</label>
+      <default>
+        <earliest>-4h@m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Environment status: Click on the row for an environment to select it and get more details below</title>
+      <input id="crit_services" type="multiselect" token="critServices">
+        <label>Critical services</label>
+        <search base="base_search">
+          <query>
+            | dedup Service | table Service | sort Service
+          </query>
+        </search>
+        <delimiter> OR </delimiter>
+        <fieldForLabel>Service</fieldForLabel>
+        <fieldForValue>Service</fieldForValue>
+        <default>Solr Server,EhrServer,DIPS Authorization Server,Arena App server,Arena VAS Server,IdentityServer,RabbitMQ Server (MQTT),RabbitMQ Server (AMQP)</default>
+        <valuePrefix>Service="</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+      </input>
+      <table>
+        <search base="base_search">
+          <query>
+            | stats latest(ping.httpStatusCode) as httpPingStatusCode latest(healthResponse.health.statuscode) as healthStatusCode by Environmen Service
+            | stats 
+              count as "Services configured" 
+              count(eval(httpPingStatusCode=200 AND healthStatusCode=10)) as "Services up and healthy" 
+              count(eval((httpPingStatusCode!=200 OR healthStatusCode!=10) AND !($critServices$))) as "Non critical services down or unhealty" 
+              count(eval((httpPingStatusCode!=200 OR healthStatusCode!=10) AND ($critServices$))) as "Critical services down or unhealty"
+              by Environmen
+          </query>
+        </search>
+        <!-- TODO: Icon to show current status (green - no services down, yellow - services down, red - critical services down) -->
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <set token="form.environment">$click.value$</set>
+        </drilldown>
+      </table>
+      <chart>
+        <search base="base_search">
+          <query>
+            | stats latest(ping.httpStatusCode) as httpPingStatusCode latest(healthResponse.health.statuscode) as healthStatusCode by Environmen Service
+            | stats 
+              count(eval((httpPingStatusCode!=200 OR healthStatusCode!=10) AND ($critServices$))) as "Critical services down or unhealty"
+              count(eval((httpPingStatusCode!=200 OR healthStatusCode!=10) AND !($critServices$))) as "Non critical services down or unhealty" 
+              count(eval(httpPingStatusCode=200 AND healthStatusCode=10)) as "Services up and healthy" 
+              by Environmen</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.seriesColors">[0xaf575a,0xec9960,0x4fa484]</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <set token="form.environment">$click.value$</set>
+        </drilldown>
+      </chart>
+      <html>
+        <style>
+          #crit_services {
+            width: 100% !important;
+          }
+          #crit_services .sc-Rmtcm {
+            width: -webkit-fill-available !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="service_overview_table">
+      <title>Service overview for selected environment: $environment$ - Click on a row to see the latest event for this service</title>
+      <input type="dropdown" token="environment" searchWhenChanged="true">
+        <label>Environment</label>
+        <search base="base_search">
+          <query>
+            | dedup Environmen | table Environmen | sort Environmen
+          </query>
+        </search>
+        <fieldForLabel>Environmen</fieldForLabel>
+        <fieldForValue>Environmen</fieldForValue>
+      </input>
+      <table>
+        <search base="base_search">
+          <query>| search Environmen=$environment$
+            | rename ping.httpStatusCode as code healthResponse.health.statuscode as healthStatusCode
+            | stats 
+              sparkline(count(eval(code == 200))) as "Ping status 200" 
+              sparkline(count(eval(code &gt;= 400 AND code &lt;= 599))) as "Ping status 4XX or 5XX" 
+              sparkline(count(eval(healthStatusCode == 10))) as "Healthy" 
+              sparkline(count(eval(healthStatusCode != 10))) as "Unhealthy" 
+              latest(ping.last) as "Last Ping" 
+              latest(code) as "Last HTTP ping status code" 
+              latest(healthStatusCode) as "Last health status code" 
+              count(eval(code &gt;= 400 AND code &lt;= 599)) as "Ping status 4XX or 5XX count" 
+              count(eval(healthStatusCode != 10)) as "Unhealthy count" 
+              by Environmen Service
+            | rename Service as "Service Name"
+            | eval last_ping_epoch=strptime('Last Ping', "%Y-%m-%dT%H:%M:%S.%3N%Z")
+            | eval "Time since last ping"=tostring(round(now() - last_ping_epoch, 0), "duration")
+            | sort - "Last HTTP ping status code" "Last health status code" "Ping status 4XX or 5XX count" "Unhealthy count"
+            | table range "Service Name" "Last HTTP ping status code" "Last health status code" "Ping status 200" "Ping status 4XX or 5XX" "Healthy" "Unhealthy" "Time since last ping"</query>
+        </search>
+        <!-- TODO: Icon to show current status, exclamation mark if critical -->
+        <option name="count">50</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Last HTTP ping status code">
+          <colorPalette type="list">[#006d9c,#4fa484,#ec9960,#af575a]</colorPalette>
+          <scale type="threshold">200,201,399</scale>
+        </format>
+        <format type="color" field="Last health status code">
+          <colorPalette type="list">[#006d9c,#4fa484,#ec9960,#af575a]</colorPalette>
+          <scale type="threshold">10,20,30</scale>
+        </format>
+        <format field="Ping status 200" type="sparkline">
+          <option name="lineColor">#4fa484</option>
+          <option name="fillColor">#86dbB9</option>
+          <option name="chartRangeMin">0</option>
+        </format>
+        <format field="Ping status 4XX or 5XX" type="sparkline">
+          <option name="lineColor">#af575a</option>
+          <option name="fillColor">#ea8B8c</option>
+          <option name="chartRangeMin">0</option>
+        </format>
+        <format field="Healthy" type="sparkline">
+          <option name="lineColor">#4fa484</option>
+          <option name="fillColor">#86dbB9</option>
+          <option name="chartRangeMin">0</option>
+        </format>
+        <format field="Unhealthy" type="sparkline">
+          <option name="lineColor">#af575a</option>
+          <option name="fillColor">#ea8B8c</option>
+          <option name="chartRangeMin">0</option>
+        </format>
+        <drilldown>
+          <set token="form.service">$click.value$</set>
+        </drilldown>
+      </table>
+      <html>
+        <style>
+          #service_overview_table {
+            width: 70% !important;
+          }
+        </style>
+      </html>
+    </panel>
+    <panel id="last_event_for_service">
+      <title>Last event from selected service</title>
+      <input type="dropdown" token="service" searchWhenChanged="true">
+        <label>Service</label>
+        <search base="base_search">
+          <query>
+            | dedup Service | table Service | sort Service
+          </query>
+        </search>
+        <fieldForLabel>Service</fieldForLabel>
+        <fieldForValue>Service</fieldForValue>
+      </input>
+      <event>
+        <search>
+          <query>
+            index=application_status env=$environment$ service.name="$service$" | dedup _raw | head 1
+          </query>
+        </search>
+        <fields></fields>
+        <option name="list.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </event>
+      <html>
+        <style>
+          #last_event_for_service {
+            width: 30% !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+  <row depends="$hidden_token$">
+    <panel>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel h2.panel-title {
+            font-size: 20px !important;
+          }
+          .dashboard-row {
+            padding-bottom: 30px !important;
+          }
+        </style>
+      </html>
+    </panel>
+  </row>
+</form>
