@@ -1,0 +1,26 @@
+| inputlookup DIPS-ast.csv 
+| map search="
+        search index=application_log applicationId=0 sessionEnvironment=$environment$ earliest=$from$ latest=$to$ 
+        | dedup _raw
+        | stats dc(userId) as loggedInUsers
+        | eval testRunName=\"$testRunName$\", environment=\"$environment$\", arenaVersion=$arenaVersion$, from=$from$, to=$to$
+      "
+| map search="
+        search index=application_log NOT applicationId=0 logLevel=\"[ERROR]\" environment=$environment$ earliest=$from$ latest=$to$ 
+        | dedup _raw
+        | stats count as serverErrorMessages,
+        | eval testRunName=\"$testRunName$\", environment=\"$environment$\", arenaVersion=$arenaVersion$, from=$from$, to=$to$, loggedInUsers=$loggedInUsers$
+      "
+| map search="
+        search index=application_log applicationId=0 logLevel=\"[ERROR]\" sessionEnvironment=$environment$ earliest=$from$ latest=$to$ 
+        | dedup _raw
+        | stats dc(userId) as loggedInUsersWithErrors, count as clientErrorMessages,
+        | eval testRunName=\"$testRunName$\", environment=\"$environment$\", arenaVersion=$arenaVersion$, from=$from$, to=$to$, loggedInUsers=$loggedInUsers$, serverErrorMessages=$serverErrorMessages$
+      "
+| eval name=$testRunName$
+| eval t1=strptime(from,"%m/%d/%Y:%H:%M:%S") , t2=strptime(to,"%m/%d/%Y:%H:%M:%S") 
+| eval durationSec=round(t2-t1,0)
+| eval durationMin=round(durationSec/60,0)
+| eval totalErrors=serverErrorMessages+clientErrorMessages
+| sort to
+| outputcsv DIPS-ast-detailed-info

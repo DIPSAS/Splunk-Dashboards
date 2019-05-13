@@ -1,0 +1,145 @@
+<dashboard theme="light">
+  <label>proj-sta-2019: AST overview</label>
+  <description>This board should provide an overview of the status from the different AST runs so that it is possible to compare how the test ran related to previous runs.</description>
+  <!-- Base search used for most of the panels on the board -->
+  <search id="base_search">
+    <query>
+      | inputcsv DIPS-ast-detailed-info
+    </query>
+    <earliest>-15m</earliest>
+    <latest>now</latest>
+  </search>
+  <row>
+    <panel>
+      <title>Table overview</title>
+      <table>
+        <search base="base_search">
+          <query>
+            | sort - to
+            | table name arenaVersion environment loggedInUsers loggedInUsersWithErrors serverErrorMessages clientErrorMessages durationMin durationSec</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Users</title>
+      <chart>
+        <search base="base_search">
+          <query>
+            | table name loggedInUsers loggedInUsersWithErrors
+            | rename loggedInUsers as "Logged in users" loggedInUsersWithErrors as "Logged in users with errors"
+          </query>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.markerSize">3</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.showMarkers">1</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">400</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Errors</title>
+      <chart>
+        <search base="base_search">
+          <query>
+            | table name serverErrorMessages clientErrorMessages totalErrors
+            | rename serverErrorMessages as "Server errors" clientErrorMessages as "Client errors" totalErrors as "Total errors"
+          </query>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.markerSize">3</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.showMarkers">1</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">400</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Errors pr user</title>
+      <chart>
+        <search base="base_search">
+          <query>
+            | eval serverErrorMessagesPrUser=round(serverErrorMessages/loggedInUsers,0)
+            | eval clientErrorMessagesPrUser=round(clientErrorMessages/loggedInUsers,0)
+            | eval totalErrorsPrUser=round(totalErrors/loggedInUsers,0)
+            | table name serverErrorMessagesPrUser clientErrorMessagesPrUser totalErrorsPrUser
+            | rename serverErrorMessagesPrUser as "Server errors pr user" clientErrorMessagesPrUser as "Client errors pr user" totalErrorsPrUser as "Total errors pr user"
+          </query>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.markerSize">3</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.showMarkers">1</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">400</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Errors pr minute</title>
+      <chart>
+        <search base="base_search">
+          <query>
+            | eval serverErrorMessagesPrMin=round(serverErrorMessages/durationMin,0)
+            | eval clientErrorMessagesPrMin=round(clientErrorMessages/durationMin,0)
+            | eval totalErrorsPrMin=round(totalErrors/durationMin,0)
+            | table name serverErrorMessagesPrMin clientErrorMessagesPrMin totalErrorsPrMin
+            | rename serverErrorMessagesPrMin as "Server errors pr minute" clientErrorMessagesPrMin as "Client errors pr minute" totalErrorsPrMin as "Total errors pr minute"
+          </query>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.markerSize">3</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.showMarkers">1</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">400</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Errors pr user pr minute</title>
+      <chart>
+        <search base="base_search">
+          <query>
+            | eval serverErrorMessagesPrUserPrMin=round(serverErrorMessages/loggedInUsers/durationMin,2)
+            | eval clientErrorMessagesPrUserPrMin=round(clientErrorMessages/loggedInUsers/durationMin,2)
+            | eval totalErrorsPrUserPrMin=round(totalErrors/loggedInUsers/durationMin,2)
+            | table name serverErrorMessagesPrUserPrMin clientErrorMessagesPrUserPrMin totalErrorsPrUserPrMin
+            | rename serverErrorMessagesPrUserPrMin as "Server errors pr user pr minute" clientErrorMessagesPrUserPrMin as "Client errors pr user pr minute" totalErrorsPrUserPrMin as "Total errors pr user pr minute"
+          </query>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.markerSize">3</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.showMarkers">1</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">400</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Percentage of users who generated errors</title>
+      <chart>
+        <search base="base_search">
+          <query>
+            | eval percentageOfLoggedInUsersWithErrors=round(loggedInUsersWithErrors/loggedInUsers*100,0)
+            | table name percentageOfLoggedInUsersWithErrors
+            | rename percentageOfLoggedInUsersWithErrors as "Percentage of logged in users with errors"
+          </query>
+        </search>
+        <option name="charting.axisY.maximumNumber">100</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.markerSize">3</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.showMarkers">1</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="height">400</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>
