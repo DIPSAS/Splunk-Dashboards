@@ -63,9 +63,9 @@
   </fieldset>
   <row>
     <panel>
-      <title>All ERRORS for give timeframe</title>
+      <title>All ERRORS for given timeframe</title>
       <event>
-        <title>Click on an ERROR in this list to analyse it under (must click on error text). Use the "Search" field above to search for specific errors.</title>
+        <title>Click on an ERROR in this list to analyse it under (must click on error text). Use the "Search" field above to search for specific errors. NB: If sessionId is not set or set to (null), the log is configured wrong and this tool will be less effektive.</title>
         <search>
           <query>
             index=* logLevel="[ERROR]" $extra_query$ 
@@ -96,7 +96,7 @@
       </input>
       <input type="text" token="offset">
         <label>Offset (+-sec)</label>
-        <default>70</default>
+        <default>2</default>
       </input>
       <input type="time" token="errorContextTimerange">
         <label>ERROR context timerange</label>

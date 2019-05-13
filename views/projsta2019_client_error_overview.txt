@@ -9,7 +9,7 @@
   <!-- Base search used for most of the panels on the board -->
   <search id="base_search">
     <query>
-      index=* applicationId=0 logLevel="[ERROR]" $userId$ $extraQuery$
+      index=application_log applicationId=0 logLevel="[ERROR]" $userId$ $extraQuery$
       | dedup _raw
       | fillnull value="NA" sessionEnvironment 
       | search $sessionEnvironment$
@@ -33,7 +33,7 @@
   <!-- Search that sets earliest and latest time when selecting AST run -->
   <search>
     <query>
-      | inputlookup DIPS-ast.csv | search name="$ast$"
+      | inputlookup DIPS-ast.csv | search testRunName="$ast$"
       | eval from = strptime(from, "%m/%d/%Y:%H:%M:%S")
       | eval to = strptime(to, "%m/%d/%Y:%H:%M:%S")
     </query>
@@ -41,7 +41,7 @@
     <latest>now</latest>
     <done>
       <condition match=" 'job.resultCount' != 0">
-        <set token="urlTitle">$result.name$ -</set>
+        <set token="urlTitle">$result.testRunName$ -</set>
         <set token="earliest">$result.from$</set>
         <set token="latest">$result.to$</set>
         <set token="form.sessionEnvironment">$result.environment$</set>
@@ -51,8 +51,8 @@
   <fieldset submitButton="false" autoRun="true">
     <input type="dropdown" token="ast" searchWhenChanged="true">
       <label>Configure for AST run</label>
-      <fieldForLabel>name</fieldForLabel>
-      <fieldForValue>name</fieldForValue>
+      <fieldForLabel>testRunName</fieldForLabel>
+      <fieldForValue>testRunName</fieldForValue>
       <search>
         <query>| inputlookup DIPS-ast.csv</query>
         <earliest>-15m</earliest>
@@ -75,7 +75,7 @@
       <label>Session environment</label>
       <choice value="">All</choice>
       <search>
-        <query>index=* logLevel="[ERROR]" | dedup sessionEnvironment  | sort - sessionEnvironment  | table sessionEnvironment </query>
+        <query>index=application_log logLevel="[ERROR]" | dedup sessionEnvironment | sort - sessionEnvironment | table sessionEnvironment </query>
       </search>
       <fieldForLabel>sessionEnvironment</fieldForLabel>
       <fieldForValue>sessionEnvironment</fieldForValue>
@@ -116,21 +116,44 @@
   <row>
     <panel id="errorCount">
       <single>
-        <title>Total error count for timerange</title>
         <search base="base_search">
           <query> | stats count</query>
         </search>
         <option name="drilldown">none</option>
+        <option name="underLabel">Total error count for timerange</option>
         <option name="useColors">0</option>
       </single>
-      <html>
-        <style>
-          #errorCount{
-            width:10% !important;
-          }
-        </style>
-      </html>
     </panel>
+    <panel>
+      <single>
+        <search>
+          <query>
+            index=application_log applicationId=0 $userId$ $extraQuery$
+            | dedup _raw
+            | dedup userId 
+            | fillnull value="NA" sessionEnvironment 
+            | search $sessionEnvironment$
+            | fields userId 
+            | stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">Logged in users</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search base="base_search">
+          <query>
+            | dedup userId 
+            | stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">Users that generated errors</option>
+      </single>
+    </panel>
+  </row>
+  <row>
     <panel id="errorTimeline">
       <chart depends="$show_count_by_environment$">
         <title>Error messages timeline pr environment</title>
@@ -149,7 +172,7 @@
       <html>
         <style>
           #errorTimeline{
-            width:70% !important;
+            width:75% !important;
           }
         </style>
       </html>
@@ -174,7 +197,7 @@
       <html>
         <style>
           #errorCountByUserId{
-            width:20% !important;
+            width:25% !important;
           }
         </style>
       </html>
@@ -185,10 +208,11 @@
       <table>
         <title>Error count by logger</title>
         <search base="base_search">
-          <query> | stats count by logger | sort -num(count) | eval details="click me"</query>
+          <query>| stats count by logger | sort -num(count) | eval details="click me" | table count logger details</query>
         </search>
         <option name="count">15</option>
         <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
         <drilldown>
           <condition field="details">
             <link target="_blank">/app/search/projsta2019_error_context_and_analysis?earliest=$earliest$&amp;latest=$latest$&amp;form.extra_query=$row.logger$</link>
@@ -200,11 +224,12 @@
       </table>
       <html>
         <style>
+          #errorCountByLogger{
+            width:40% !important;
+          }
           #errorCountByLogger td {
             color: #000000; !important;
-          }
-          #errorCountByLogger{
-            width:42% !important;
+            word-break: break-word;
           }
         </style>
       </html>
@@ -213,14 +238,15 @@
       <table>
         <title>Error count by identical messages</title>
         <search base="base_search">
-          <query>
-            | eval shortMessage=if(len(message)&gt;80, substr(message,1,80)+"...", message)
+          <query>| eval shortMessage=if(len(message)&gt;80, substr(message,1,80)+"...", message)
             | stats count by logger, shortMessage 
             | sort -num(count) 
             | eval details="click me"
-            | table shortMessage, count, details, logger</query>
+            | table count shortMessage logger details</query>
         </search>
+        <option name="count">10</option>
         <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
         <drilldown>
           <condition field="details">
             <eval token="searchMessage">replace($row.shortMessage$, "\\\\", "\\\\")</eval>
@@ -234,11 +260,12 @@
       </table>
       <html>
         <style>
+          #errorCountByMessage{
+            width:60% !important;
+          }
           #errorCountByMessage td {
             color: #000000; !important;
-          }
-          #errorCountByMessage{
-            width:58% !important;
+            word-break: break-word;
           }
         </style>
       </html>
@@ -247,7 +274,7 @@
   <row>
     <panel>
       <event>
-        <title>Message</title>
+        <title>All error events</title>
         <search base="base_search"></search>
         <fields>["host","logger","userId"]</fields>
         <option name="count">10</option>

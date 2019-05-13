@@ -1,4 +1,4 @@
-<form>
+<form theme="light">
   <label>proj-sta-2019: Server error overview</label>
   <description>The purpose of this board is to give an overview of server errors in general or during an AST run. If you have any questions or ideas for improvement, contact DIPS-MAE.</description>
   <init>
@@ -9,7 +9,7 @@
   <!-- Base search used for most of the panels on the board -->
   <search id="base_search">
     <query>
-      index=* $applicationId$ logLevel="[ERROR]" $extraQuery$ NOT applicationId=0
+      index=application_log $applicationId$ logLevel="[ERROR]" $extraQuery$ NOT applicationId=0
       | dedup _raw
       | fillnull value="NA" host 
       | fillnull value="NA" environment 
@@ -30,7 +30,7 @@
   <!-- Search that sets earliest and latest time when selecting AST run -->
   <search>
     <query>
-      | inputlookup DIPS-ast.csv | search name="$ast$"
+      | inputlookup DIPS-ast.csv | search testRunName="$ast$"
       | eval from = strptime(from, "%m/%d/%Y:%H:%M:%S")
       | eval to = strptime(to, "%m/%d/%Y:%H:%M:%S")
     </query>
@@ -38,7 +38,7 @@
     <latest>now</latest>
     <done>
       <condition match=" 'job.resultCount' != 0">
-        <set token="urlTitle">$result.name$ -</set>
+        <set token="urlTitle">$result.testRunName$ -</set>
         <set token="earliest">$result.from$</set>
         <set token="latest">$result.to$</set>
         <set token="form.environment">$result.environment$</set>
@@ -48,8 +48,8 @@
   <fieldset submitButton="false" autoRun="true">
     <input type="dropdown" token="ast" searchWhenChanged="true">
       <label>Configure for AST run</label>
-      <fieldForLabel>name</fieldForLabel>
-      <fieldForValue>name</fieldForValue>
+      <fieldForLabel>testRunName</fieldForLabel>
+      <fieldForValue>testRunName</fieldForValue>
       <search>
         <query>| inputlookup DIPS-ast.csv</query>
         <earliest>-15m</earliest>
@@ -211,9 +211,10 @@
       <table>
         <title>Error count by application</title>
         <search base="base_search">
-          <query> | stats count by applicationName | sort -num(count)</query>
+          <query>| stats count by applicationName | sort -num(count) | table count applicationName</query>
         </search>
         <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
       </table>
       <html>
         <style>
@@ -229,10 +230,11 @@
       <table>
         <title>Error count by logger</title>
         <search base="base_search">
-          <query> | stats count by logger | sort -num(count) | eval details="click me"</query>
+          <query>| stats count by logger | sort -num(count) | eval details="click me" | table count logger details</query>
         </search>
         <option name="count">15</option>
         <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
         <drilldown>
           <condition field="details">
             <link target="_blank">/app/search/projsta2019_error_context_and_analysis?earliest=$earliest$&amp;latest=$latest$&amp;form.extra_query=logger%3D$row.logger$</link>
@@ -249,6 +251,7 @@
           }
           #errorCountByLogger td {
             color: #000000; !important;
+            word-break: break-word;
           }
         </style>
       </html>
@@ -257,10 +260,11 @@
       <table>
         <title>Error count by WCF server interface</title>
         <search base="base_search">
-          <query> | rex field=message "^Wcf/Server/(?&lt;WcfInterface&gt;\w+)/" | stats count by WcfInterface | sort -num(count) | eval details="click me"</query>
+          <query>| rex field=message "^Wcf/Server/(?&lt;WcfInterface&gt;\w+)/" | stats count by WcfInterface | sort -num(count) | eval details="click me" | table count WcfInterface details</query>
         </search>
         <option name="count">15</option>
         <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
         <drilldown>
           <condition field="details">
             <link target="_blank">/app/search/projsta2019_error_context_and_analysis?earliest=$earliest$&amp;latest=$latest$&amp;form.extra_query=$row.WcfInterface$</link>
@@ -273,10 +277,11 @@
       <html>
         <style>
           #errorCountByWcfInterface {
-            width:20% !important;
+            width:22% !important;
           }
           #errorCountByWcfInterface td {
             color: #000000; !important;
+            word-break: break-word;
           }
         </style>
       </html>
@@ -285,9 +290,10 @@
       <table>
         <title>Error count by identical messages</title>
         <search base="base_search">
-          <query>| eval shortMessage=if(len(message)&gt;80, substr(message,1,80)+"...", message) | stats count by shortMessage | sort -num(count) | eval details="click me"</query>
+          <query>| eval shortMessage=if(len(message)&gt;80, substr(message,1,80)+"...", message) | stats count by shortMessage | sort -num(count) | eval details="click me" | table count shortMessage details</query>
         </search>
         <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
         <drilldown>
           <condition field="details">
             <eval token="searchMessage">replace($row.shortMessage$, "\\\\", "\\\\")</eval>
@@ -302,10 +308,11 @@
       <html>
         <style>
           #errorCountByMessage {
-            width:40% !important;
+            width:38% !important;
           }
           #errorCountByMessage td {
             color: #000000; !important;
+            word-break: break-word;
           }
         </style>
       </html>
@@ -314,7 +321,7 @@
   <row>
     <panel>
       <event>
-        <title>Message</title>
+        <title>All error events</title>
         <search base="base_search"></search>
         <fields>["host","index","applicationName"]</fields>
         <option name="count">10</option>
