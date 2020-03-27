@@ -1,0 +1,76 @@
+<form>
+  <label>DIPS Arena Performance</label>
+  <search id="base" depends="environment">
+    <query>index=application_profiling environment1=$environment$ applicationId=0  [ | inputlookup DIPS-Arena-contextName.csv | fields contextName|  format ]
+            | eval time_taken=if(isnotnull(elapsedWithChildren), elapsedWithChildren, elapsed)
+            | outlier action=remove time_taken
+    </query>
+    <earliest>-24h@h</earliest>
+    <latest>now</latest>
+  </search>
+  <fieldset submitButton="false">
+    <input id="environment" type="dropdown" searchWhenChanged="true" token="environment">
+      <label>Environment</label>
+      <choice value="lab7-app06">lab7-app06</choice>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table>
+        <title>Responstider</title>
+        <search base="base">
+          <query>stats  count(time_taken) as SampleCount, avg(time_taken) as "Average" perc90(time_taken) as "90th Percentile", perc95(time_taken) as "95th Percentile",  by contextName
+                 | lookup DIPS-Arena-contextName.csv contextName as contextName OUTPUT  name as contextName_human</query>
+        </search>
+        <option name="drilldown">cell</option>
+        <format type="color" field="Average">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+        <format type="number" field="Average">
+          <option name="unit">ms</option>
+          <option name="useThousandSeparators">false</option>
+        </format>
+        <format type="color" field="90th Percentile">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+        <format type="number" field="90th Percentile">
+          <option name="unit">ms</option>
+                    <option name="useThousandSeparators">false</option>
+
+        </format>
+        <format type="color" field="95th Percentile">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+        <format type="number" field="95th Percentile">
+          <option name="unit">ms</option>
+                    <option name="useThousandSeparators">false</option>
+
+        </format>
+        <drilldown>
+          <set token="contextName">$row.contextName$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Fordeling av responstider:</title>
+        <search base="base">
+          <query>where contextName="$contextName$" | chart count BY time_taken span=log2</query>
+        </search>
+        <option name="charting.axisTitleX.text">ms</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.text">Antall kall</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>

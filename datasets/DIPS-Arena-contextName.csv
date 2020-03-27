@@ -1,0 +1,13 @@
+contextName, name, description
+AD/DC/ShellViewModel/LoggedIn,Pålogging,
+PL/PL/RowProvider.Inntaksplanlegging/Load,Pasientliste: Venteliste,
+RE/AU/ShellViewModel/OnInitialized,Åpne henvisning,
+SS/AP/AdmissionPlanningPageMaximizedViewModel/InitializeAsync,Åpne Inntaksplanlegging,
+OM/BM/OrderClientViewModel/InitializeOrderClient,Oppstart bestilling,
+OM/BM/OrderItemViewModel/SendOrderClicked ,Send bestilling,
+OM/BM/OrderListViewModel/EditOrderClicked,Åpne bestilling for redigering (også utkast),
+OM/BM/OrderItemViewModel/SaveDraftClicked,Bestilling: Lagre utkast,
+SA/SA/OrderSamplingAPI/OpenOrderSampling,Åpne prøvetaking fra Bestilling,
+OM/BM/OrderItemViewModel/CancelOrderClicked,Bestilling: Avbryt,
+SA/SA/SamplinglistPrintManager/PrintLabels,Skriv ut etiketter fra prøvetaking,
+PrintLabelsEM/EM/ChromiumBrowserViewModel/EvaluateScriptAsync/Sampling.onPrintComplete,,
