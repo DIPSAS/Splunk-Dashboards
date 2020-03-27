@@ -1,35 +1,73 @@
 <form>
-  <label>Trond sin rapport</label>
+  <label>Arena Performance Dashboard</label>
+  <description>Responstidsmålinger fra utvalgte funksjoner på Arena-klienten. Listen over funksjoner finner du her https://dips-alm/DefaultCollection/DIPS/_git/Splunk-Dashboards?path=%2Fdatasets%2FDIPS-Arena-contextName.csv&amp;version=GBfeature%2Ftda-user-performance</description>
   <search id="base" depends="environment">
     <query>index=application_profiling environment1=$environment$ applicationId=0  [ | inputlookup DIPS-Arena-contextName.csv | fields contextName|  format ]
             | eval time_taken=if(isnotnull(elapsedWithChildren), elapsedWithChildren, elapsed)
             | outlier action=remove time_taken
     </query>
-    <earliest>-24h@h</earliest>
-    <latest>now</latest>
+    <earliest>$field1.earliest$</earliest>
+    <latest>$field1.latest$</latest>
   </search>
   <fieldset submitButton="false">
     <input id="environment" type="dropdown" searchWhenChanged="true" token="environment">
       <label>Environment</label>
       <fieldForLabel>desc</fieldForLabel>
       <fieldForValue>id</fieldForValue>
-      <search>
+      <search depends="field1">
         <query>index=application_profiling environment1!=NA applicationId=0  [ | inputlookup DIPS-Arena-contextName.csv | fields contextName|  format ]
-| stats count by environment1</query>
-        <earliest>-24h@h</earliest>
-        <latest>now</latest>
+| stats count by environment1
+| rename environment1 as id
+| strcat id " (" count ")" desc
+| fields desc id</query>
+        <earliest>$field1.earliest$</earliest>
+        <latest>$field1.latest$</latest>
       </search>
     </input>
+    <input type="time" token="field1">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
   </fieldset>
+  <row>
+    <panel>
+      <title>Aktivitet pr. miljø</title>
+      <chart>
+        <search>
+          <query>index=application_profiling environment1!=NA applicationId=0  [ | inputlookup DIPS-Arena-contextName.csv | fields contextName|  format ]
+| timechart count by environment1</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="height">100</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">small</option>
+        <option name="trellis.splitBy">id</option>
+      </chart>
+    </panel>
+  </row>
   <row>
     <panel>
       <table>
         <title>Responstider</title>
         <search base="base">
-          <query>stats  count(time_taken) as SampleCount, avg(time_taken) as "Average" perc90(time_taken) as "90th Percentile", perc95(time_taken) as "95th Percentile",  by contextName
-                 | lookup DIPS-Arena-contextName.csv contextName as contextName OUTPUT  name as contextName_human</query>
+          <query>| stats count(time_taken) as "Sample count" avg(time_taken) as "Average" perc90(time_taken) as "90th Percentile", perc95(time_taken) as "95th Percentile",  by contextName
+| lookup DIPS-Arena-contextName.csv contextName as contextName OUTPUT  name as "Name"
+| fields "Name" "Sample count" "Average" "90th Percentile" "95th Percentile"</query>
         </search>
         <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
         <format type="color" field="Average">
           <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
           <scale type="threshold">1000,3000</scale>
