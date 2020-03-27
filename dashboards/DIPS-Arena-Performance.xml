@@ -1,5 +1,5 @@
 <form>
-  <label>DIPS Arena Performance</label>
+  <label>Trond sin rapport</label>
   <search id="base" depends="environment">
     <query>index=application_profiling environment1=$environment$ applicationId=0  [ | inputlookup DIPS-Arena-contextName.csv | fields contextName|  format ]
             | eval time_taken=if(isnotnull(elapsedWithChildren), elapsedWithChildren, elapsed)
@@ -11,7 +11,14 @@
   <fieldset submitButton="false">
     <input id="environment" type="dropdown" searchWhenChanged="true" token="environment">
       <label>Environment</label>
-      <choice value="lab7-app06">lab7-app06</choice>
+      <fieldForLabel>desc</fieldForLabel>
+      <fieldForValue>id</fieldForValue>
+      <search>
+        <query>index=application_profiling environment1!=NA applicationId=0  [ | inputlookup DIPS-Arena-contextName.csv | fields contextName|  format ]
+| stats count by environment1</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
     </input>
   </fieldset>
   <row>
@@ -37,8 +44,7 @@
         </format>
         <format type="number" field="90th Percentile">
           <option name="unit">ms</option>
-                    <option name="useThousandSeparators">false</option>
-
+          <option name="useThousandSeparators">false</option>
         </format>
         <format type="color" field="95th Percentile">
           <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
@@ -46,8 +52,7 @@
         </format>
         <format type="number" field="95th Percentile">
           <option name="unit">ms</option>
-                    <option name="useThousandSeparators">false</option>
-
+          <option name="useThousandSeparators">false</option>
         </format>
         <drilldown>
           <set token="contextName">$row.contextName$</set>
