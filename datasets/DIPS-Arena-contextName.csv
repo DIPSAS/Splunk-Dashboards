@@ -1,16 +1,169 @@
-contextName, name, description
-AD/DC/ShellViewModel/LoggedIn,Pålogging,
-PL/PL/RowProvider.Inntaksplanlegging/Load,Pasientliste: Venteliste,
-RE/AU/ShellViewModel/OnInitialized,Åpne henvisning,
-SS/AP/AdmissionPlanningPageMaximizedViewModel/InitializeAsync,Åpne Inntaksplanlegging,
-OM/BM/OrderClientViewModel/InitializeOrderClient,Oppstart bestilling,
-OM/BM/OrderItemViewModel/SendOrderAndInitializeNewAsync,Send bestilling,
-OM/BM/OrderListViewModel/EditOrderClicked,Åpne bestilling for redigering (også utkast),
-OM/BM/OrderItemViewModel/SaveDraftClicked,Bestilling: Lagre utkast,
-OM/BM/OrderItemViewModel/CancelOrderClicked,Bestilling: Avbryt,
-OM/BM/OrderSamplingMultiPlugin/SamplingInformationChangedAction,Avbryt i bestilling,
-SA/SA/OrderSamplingInformationAPI/OpenSamplingAsync,Åpne planlegging av prøvetaking,
-SA/SA/OrderSamplingAPI/OpenOrderSampling,Åpne prøvetaking fra Bestilling,
-SA/SA/OrderSamplingListViewModel/Initialize,Åpne prøvetakingsliste,
-SA/SA/OrderSamplingAPI/PrintLabels,Skriv ut etiketter fra prøvetaking,
-SA/SA/SamplinglistPrintManager/PrintLabels,Skriv ut stikkeliste fra prøvetaking,
+contextName,area, name, description,team,createdBy,targetTime
+ AD/DC/SurfaceViewModel/AddNavigationPlugin/Document,Vedtak , ,,Team Barcode,, 
+AD/DC/Navigator/NavigateToPatientPage,Bytt pasient ,"Bytte pasient via
+  pasientnavigator ",,Team DUX,, 
+AD/DC/Navigator/NavigateToPatientPage,"Bytt
+  pasient ","Bytte pasient via
+  pasientnavigator ",,Team DUX,, 
+AD/DC/Navigator/NavigateToPatientPage,"Bytt pasient fra
+  pasientliste ","Bytte pasient i alle lister 
+    sengepostliste",,Team DUX,, 
+AD/DC/ShellViewModel/LoggedIn,Pålogging ,"Start opp DIPS 
+",,Team DUX,, 
+AD/DC/ShellViewModel/LoggedIn,Pålogging ,"Bruker har bare en rolle.
+    .",,Team DUX,, 
+AD/DC/ShellViewModel/LoggedIn ,Brukerrolle,"Bytt
+  brukerrolle ",,Team DUX,, 
+AE/PB/SettlementButtonCreator/SaveAndSettle*,Opphold ,"Velg arkfane Oppgjør og legg inn
+  en takst. ",,Team Access Violation,, 
+CI/AC/MainPageCriticalInfoMaximizedViewModel/OnInitialized,Kritisk info,"Åpning av siden kritisk
+  informasjon",,Team Weber,,3
+CI/AC/NewCriticalInfoFunctionsViewModel/Approve,Kritisk info,"Lagring av kritisk info (ikke
+  legemiddelreaksjon) ",,Team Weber,,3
+CI/AC/NewCriticalInfoFunctionsViewModel/Initialize,Kritisk info,"Åpning av arbeidsflate for
+  registrering",,Team Weber,,2
+CI/AC/NewDrugReactionFunctionsViewModel/Approve,Kritisk info,Lagring av legemiddelreaksjon,,Team Weber,,3
+CI/AC/NewDrugReactionFunctionsViewModel/Initialize,Kritisk info,"Åpning av arbeidsflate for
+  registrering",,Team Weber,,2
+"CL/CL/CorrespondenceLogViewModel/SearchCorrespondences
+",Åpne side ,Korrespondanselogg ,,Team IRQ0,, 
+CP/OR/OrderViewModel/SaveAndLoad,"Behandlingsplan
+","Lagre bestilling i
+  plan UTEN tidligere innhold",,Team RockSOLID,, 
+CP/OR/OrderViewModel/SaveAndLoad,"Behandlingsplan
+","Lagre bestilling i plan MED
+  tidligere innhold",,Team RockSOLID,, 
+CP/OR/OrderWidgetViewModel/Initialize,"Behandlingsplan
+","Last av tjenestetilbud i
+  bestilling.",,Team RockSOLID,, 
+CP/TB/SaveButtonModel/SaveAndLoad,"Behandlingsplan
+","Registrering og oppdatering i plan
+  uten tidligere historikk.",,Team RockSOLID,, 
+CP/TB/SaveButtonModel/SaveAndLoad,"Behandlingsplan
+","Registrering og oppdatering i plan
+  med tidligere historikk.",,Team RockSOLID,, 
+CP/TB/ToolbarViewModel/Initialize,"Behandlingsplan
+",Last plan ingen elementer,,Team RockSOLID,, 
+CP/TB/ToolbarViewModel/Initialize,"Behandlingsplan
+",Last plan med elementer,,Team RockSOLID,, 
+CS/HR/SelectDocumentTypeViewModel/Activate,Dokument ,"Åpne Malvelger / 'Nytt
+  dokument'-menyen",,Team Tiger,, 
+CS/HR/WorkspaceItemFactory/ActivateDocumentWorkspaceItem,Dokument ,Valg av nytt dokument (mal),,Team Tiger,, 
+CS/HR/WorkspaceItemFactory/ActivateDocumentWorkspaceItem,Dokumentliste ,"Åpne et
+  dokument ",,Team Tiger,, 
+DS/DS/PostScanEdit/ProcessFullResolutionImage,Skanning,"Redigering av
+  innskannet side.",,Team Barcode,, 
+DS/DS/ScannedDocumentEditor/OnTreeInitialized,Skanning,"Aktiver pasient, velg skanning,
+  dokumenttype og bekreft opplysningene. Stopp når skanning er lastet inn i
+  arbeidsflaten.",,Team Barcode,, 
+FD/FK/PatientRowProvider/GetPatients,Åpne side ,Sentralbord,,Team Delorean,, 
+FT/AP/FolderTreeViewModel/Refresh,Vedtak , ,,Team Barcode,, 
+FT/AP/FolderTreeViewModel/Refresh,Vedtaksside,"Opprett et § 3-3, fyll ut og
+  godkjenn. Tid fra du trykker ""Godkjenn"" til dokumentet er ferdig
+  godkjent og kommet opp i vedtakssiden (som skal ligge bak)",,Team Barcode,, 
+FT/AP/FolderTreeViewModel/Refresh,vedtaksside,"Aktiver pasient, velg side, stopp
+  når siden er lastet inn",,Team Barcode,, 
+HR/DL/DocumentListBase/Refresh,Dokumentliste,Dokumentsøk,,Team Barcode,, 
+HR/DL/DocumentListPage/OnInitialized,Dokumentliste,"Aktiver pasient, velg
+  Dokumentlisten, stopp når siden er lastet inn",,Team Barcode,, 
+HR/DL/DocumentListPage/OnInitialized,Dokumentliste,"Åpne
+  dokumentliste
+",,Team Tiger,, 
+HR/DL/FacetWindow/UpdateFacets,Dokumentliste,"Åpne filtersøylen. Stopp når
+  aktuelle filter er lastet inn.",,Team Barcode,, 
+HR/DL/FacetWindow/UpdateFacets,Dokumentliste ,"Åpne Dokumentlisten og
+  filtersøylen. Huk av for filter, og stopp når filter har lastet inn.",,Team Barcode,, 
+LS/LR/AdvancedChartViewModel/Data_PropertyChanged/IsVisible,Labsvar,"Marker en analyse
+  og trykk på Avansert kurvevisning ",,Team Albert,, 
+LS/LR/AdvancedChartViewModel/Data_PropertyChanged/IsVisible,Labsvar,"Åpne avansert
+  kurve",,Team Albert,, 
+LS/LR/LabResultPageMaximizedViewModel/OnInitialized,Labsvar,Åpne siden Labsvar ,,Team Albert,, 
+LS/LR/TimeLineViewModel/FindFilteredContent,Labsvar,Filtrer utvalg av rekvisisjoner,,Team Albert,, 
+LS/LR/TimeLineViewModel/SelectedRangeChangedCommandExecute,Labsvar,"Endre utvalget til å vise Siste
+  år. ",,Team Albert,, 
+MC/MC/DischargeReadyMessageDialogViewModel/SendCommandExecute,PLO,"Send melding om
+  utskrivingklar pasient",,Team Swoosh,, 
+MC/MC/DocumentDataGridViewModel/OnDocumentSavedEvent,PLO,Send meldinger: Utskrivningsklar pasient   ,,Team Swoosh,, 
+MC/MC/DocumentDataGridViewModel/OnDocumentSavedEvent,PLO,Send meldinger: Utskrivingsrapport,,Team Swoosh,, 
+MC/MC/DocumentDataGridViewModel/OnDocumentSavedEvent,PLO,"Send meldinger: Helse opplysninger
+  oppdatering           ",,Team Swoosh,, 
+MC/MC/DocumentDataGridViewModel/OnDocumentSavedEvent,PLO,Send meldinger: Forespørsel,,Team Swoosh,, 
+MC/MC/MunicipalCareColumnProvider/GetMessageInfos,PLO,Velg alle i nedtrekket for POST,,Team Swoosh,, 
+MC/MC/MunicipalCareColumnProvider/GetMessageInfos,PLO,Velg PLO siden,,Team Swoosh,, 
+MC/MC/MunicipalCareDocumentInteractionServiceFacade/HospitalizedPatientMessage,PLO,Velg PLO ikon,,Team Swoosh/DeLorean,, 
+MQ/MedicalCodingInWorkspaceViewModel/Save​*,"Medisinske
+  koder ","Velg arkfane
+  Medisinsk koding i Oppholdssiden og legg til en diagnosekode ",,"Team Access
+  Violation",, 
+MQ/WidgetViewModel/Initialize​,"Medisinske
+  koder ","Åpne Medisinsk
+  koding fra Oppholdssiden ",,"Team Access
+  Violation",, 
+MQ/WorkspaceViewModel/Initialize,Medisinske koder ,"Klikk på ikonet Registrer
+  medisinske koder ",,Team Access Violation,, 
+OM/BM/OrderClientViewModel/InitializeOrderClient,Bestillingsmodul (AOM) ,Oppstart bestilling,,Team Frost,,"2,5"
+OM/BM/OrderEditorsViewModel/SetSelectedTabToOverview ,Bestillingsmodul (AOM) ,Naviger til oversikt,,Team Frost,,1
+OM/BM/OrderItemViewModel/SaveDraftClicked,Bestillingsmodul (AOM) ,Lagre utkast,,Team Frost,,3
+OM/BM/OrderItemViewModel/SendOrderClicked,Bestillingsmodul (AOM) ,Send bestilling,,Team Frost,,3
+OM/BM/OrderListViewModel/EditOrderClicked,"Bestillingsmodul
+  (AOM) ","Åpne utkast for
+  redigering",,Team Frost,,3
+OM/BM/OrderListViewModel/EditOrderClicked,"Bestillingsmodul
+  (AOM) ","Åpne for
+  redigering",,Team Frost,,3
+PI/PL/PersonalInformationViewModel/Initialize,Åpne side ,Pasientopplysninger ,,Team Delorean,, 
+PL/PL/PatientList/Refresh,"Pasientliste 
+    RG - Inneliggende","Åpne pasinetlisteRG -
+  Inneliggende, velg en avdeling og trykk oppdater",,Team Barcode,, 
+PL/PL/PatientList/Refresh,"Pasientliste 
+    RG - konsultasjonsserie","Endre Avdeling og Seksjon, og
+  trykk oppdater",,Team Barcode,, 
+PL/PL/PatientList/Refresh,"Pasientliste 
+    RG - konsultasjonsserie","Åpne pasinetliste RG-kons.serie,
+  velg en avdeling og trykk oppdater",,Team Barcode,, 
+PL/PL/PatientList/Refresh,Pasientlisterammeverk,"Lasting av 2500
+  rader",,Team Selecta,, 
+PL/PL/PatientList/Refresh,Vedtak ,"Åpne Pasientlisten
+  Gjennomføring - kons.serier",,Team Barcode,, 
+PL/PL/PatientList/Refresh,Vedtak ,Åpne Pasientlisten Vedtaksliste,,Team Barcode,, 
+PL/PL/PatientList/Refresh,Vedtak ,"Åpne Pasientlisten
+  Polikliniske -rettslig grunnlag",,Team Barcode,, 
+PL/PV/ActivePatientRowProvider/OnLoad,Pasientlister ,Åpne siden pasientlister ,,Team DeLorean,, 
+PL/PV/AdmissionListRowProvider/GetAdmissions,Pasientlister ,Åpen en Oppmøteliste ,,Team DeLorean,, 
+PL/PV/WardListRowProvider/OnLoad,Pasientlister ,Sorter på en Avdeling  ,,Team DeLorean,, 
+PV/PV/DischargeDialogViewModel/DischargeExecute,Opphold ,"Velg arkfane sengepostrutiner og
+  Utskriving ",,Team DeLorean ,, 
+PV/PV/PatientVisitListContainerViewModel/Initialize,Opphold,Åpne siden Opphold ,,Team DeLorean ,, 
+PV/PV/PatientVisitListViewModel/SetSelectedItemAsync,Opphold ,Bytte opphold,,Team DeLorean ,, 
+RE/AU/ShellViewModel/OnInitialized,Henvisning ,Åpne siden henvisning ,,Team iTid,, 
+RE/RDS/AttachmentsViewModel/OpenAddDocuments,Henvisning ,Legg til dokument ,,Team iTid,, 
+RE/RIR/ReceptionTileViewModel/NavigateToInitialiReceptionWorkspace,Henvisning ,"Vurdere
+  henvisning ",,Team iTid,, 
+SA/SA/OrderSamplingAPI/OpenOrderSampling,Bestillingsmodul (AOM) ,Åpne Prøvetaking fra Bestilling,,Team Zen,,2
+SA/SA/SamplinglistPrintManager/PrintLabels,Bestillingsmodul (AOM) ,Skriv ut etiketter fra prøvetaking,,Team Zen,,2
+SS/AP/WaitingListRowProvider/OnLoad,Planlegging ,"Åpne Venteliste via
+  Planlegging ",,Team Shaun,, 
+SU/AQ/CreateNewSurgeryDialogServiceFacade/CreateSurgery,"Operasjonsplan
+  
+","Godkjenne
+  operasjonsbestillingen:",,Team Swoosh,, 
+SU/AQ/CreateNewSurgeryDialogServiceFacade/GetNewSurgeryInfo,"Operasjonsplan 
+","Bestill en ny operasjon på
+  pasienten:  ",,Team Swoosh,, 
+SU/AQ/SurgeryOverViewServiceFacade/FindSurgeryItemsByPatient,"Operasjonsplan 
+","Velg ny pasient, Trykk på
+  Operasjon, Stopp når siden er lastet",,Team Swoosh,, 
+"TA/TD/TileAdminViewModel/Constructor
+    
+    TA/TD/TileAdminViewModel/OnInitialize
+    
+    TA/TD/TileAdminViewModel/SaveColumnInfo",Tile Manager,"Åpning av administrativ side
+  ""Konfigurerte sider""",,Team Musk,, 
+Wcf/Client/ILabResultService/GetGraphDataV2,Labsvar,"Åpne en
+  enkeltkurve",,Team Albert,, 
+WT/FW/FilterViewModelBase/WhenSummarySelectionChanged,Oppgaver,"Bytte
+  arbeidsgruppe ",,Team rockSOLID,, 
+WT/FW/FilterViewModelBase/WhenWorkTaskStatusSelectionChanged ,Oppgaver,Endre status,,Team rockSOLID,, 
+WT/FW/FilterWidget/Initialize,Oppgaver,Åpne siden,,Team rockSOLID,, 
+WT/TH/TaskHandlingWidget/SetWorkTaskPerformed,Oppgaver ,Utføre oppgave -Generell,,Team rockSOLID,, 
+WT/TH/TransferTaskViewModel/TransferTaskExecute ,Oppgaver,Overføre oppgave,,Team rockSOLID,, 
