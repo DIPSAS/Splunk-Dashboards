@@ -1,0 +1,150 @@
+<form>
+  <label>Arena Desktop Error Overview (DIPS AS)</label>
+  <description></description>
+  
+  <search id="base_search" depends="timerange, environment">
+    <query>
+      index=application_log aid=0 level IN ("ERROR","FATAL") $userId$ $extraQuery$ $environment$
+    </query>
+    <earliest>$timerange.earliest$</earliest>
+    <latest>$timerange.latest$</latest>
+  </search>
+  
+  <fieldset submitButton="false" autoRun="true">
+    <input type="time" token="timerange">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input id="environment" type="dropdown" token="environment" searchWhenChanged="true">
+      <label>Environment</label>
+      <fieldForLabel>desc</fieldForLabel>
+      <fieldForValue>env</fieldForValue>
+      <prefix>env="</prefix>
+      <suffix>"</suffix>
+      <search>
+        <query>index=application_log source=logService aid=0 level IN ("ERROR","FATAL")
+| stats count by env
+| strcat env " (" count ")" desc
+| fields desc env</query>
+        <earliest>$timerange.earliest$</earliest>
+        <latest>$timerange.latest$</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="userId" searchWhenChanged="true">
+      <label>User</label>
+      <choice value="">All</choice>
+      <search>
+        <query>index=application_log source=logService aid=0 level IN ("ERROR","FATAL") | fields username | dedup username | sort username</query>
+        <earliest>$timerange.earliest$</earliest>
+        <latest>$timerange.latest$</latest>
+      </search>
+      <fieldForLabel>username</fieldForLabel>
+      <fieldForValue>username</fieldForValue>
+      <prefix>username="</prefix>
+      <suffix>"</suffix>
+      <default></default>
+    </input>
+    <input type="text" token="extraQuery" searchWhenChanged="true">
+      <label>Search</label>
+      <default></default>
+    </input>
+  </fieldset>
+  <row>
+    <panel id="errorCount">
+      <single>
+        <search depends="timerange, environment">
+          <query>index=application_log aid=0 $environment$ level IN ("ERROR","FATAL") | stats count</query>
+          <earliest>$timerange.earliest$</earliest>
+          <latest>$timerange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">Total error count for timerange</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search depends="timerange, environment">
+          <query>index=application_log aid=0 $environment$ | fields userid | stats distinct_count</query>
+          <earliest>$timerange.earliest$</earliest>
+          <latest>$timerange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">Logged in users</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search depends="timerange, environment">
+          <query>index=application_log aid=0  $environment$ level IN ("ERROR","FATAL") |  fields userid | stats distinct_count</query>
+          <earliest>$timerange.earliest$</earliest>
+          <latest>$timerange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">Users that generated errors</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel id="errorTimeline">
+      <chart depends="$show_count_by_environment$">
+        <title>Error msgs timeline pr environment</title>
+        <search base="base_search">
+          <query> | timechart count by env</query>
+        </search>
+        <option name="height">300</option>
+      </chart>
+      <chart>
+        <title>Error msgs timeline</title>
+        <search base="base_search">
+          <query> | timechart count</query>
+        </search>
+        <option name="height">300</option>
+      </chart>
+    </panel>
+    <panel id="errorCountByUserId">
+      <chart depends="$show_count_by_environment$">
+        <title>Error count by environment</title>
+        <search depends="timerange, environment">
+          <query>index=application_log aid=0 level IN ("ERROR","FATAL") | stats count by env</query>
+          <earliest>$timerange.earliest$</earliest>
+          <latest>$timerange.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="height">300</option>
+      </chart>
+      <chart>
+        <title>Error count by username</title>
+        <search depends="timerange, environment">
+          <query>index=application_log aid=0 level IN ("ERROR","FATAL") $environment$ |  stats count by username | sort -count</query>
+          <earliest>$timerange.earliest$</earliest>
+          <latest>$timerange.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="height">300</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <event>
+        <title>All error events generated by username in selected environment</title>
+        <search base="base_search"></search>
+        <fields>["host",""@l"","userId"]</fields>
+        <option name="count">10</option>
+        <option name="list.drilldown">full</option>
+        <option name="list.wrap">1</option>
+        <option name="maxLines">5</option>
+        <option name="raw.drilldown">full</option>
+        <option name="rowNumbers">0</option>
+        <option name="table.drilldown">all</option>
+        <option name="table.wrap">1</option>
+        <option name="type">list</option>
+      </event>
+    </panel>
+  </row>
+</form>
