@@ -1,5 +1,5 @@
 <form>
-  <label>Arena Desktop Profiling Dashboard (DIPS AS)</label>
+  <label>Arena Desktop Profiling Overview (DIPS AS)</label>
   <description></description>
   
   <search id="base" depends="timerange, profilingContextFilter, environment">

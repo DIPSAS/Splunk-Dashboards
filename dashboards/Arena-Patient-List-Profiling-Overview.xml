@@ -1,0 +1,99 @@
+<form>
+  <label>Arena Patient List Profiling Overview (DIPS AS)</label>
+  <fieldset submitButton="false">
+    <input type="time" token="timerange">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input id="environment" type="dropdown" token="environment" searchWhenChanged="true">
+      <label>Environment</label>
+      <fieldForLabel>desc</fieldForLabel>
+      <fieldForValue>id</fieldForValue>
+      <search>
+        <query> index=application_profiling source=logService aid=0 (@c="PL/PL/RowProvider/Load" OR @c="PL/PL/ColumnProvider.*/Load")
+| stats count by env
+| rename env as id
+| strcat id " (" count ")" desc
+| fields desc id</query>
+        <earliest>$timerange.earliest$</earliest>
+        <latest>$timerange.latest$</latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Pasientutvalg</title>
+      <table>
+        <search>
+          <query>index=application_profiling source=logService aid=0 @c="PL/PL/RowProvider/Load" $environment$
+| stats avg(e), median(e), p95(e), count by Name
+| search count &gt; 10</query>
+          <earliest>$timerange.earliest$</earliest>
+          <latest>$timerange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="number" field="avg(e)">
+          <option name="unit">ms</option>
+        </format>
+        <format type="number" field="median(e)">
+          <option name="unit">ms</option>
+        </format>
+        <format type="number" field="p95(e)">
+          <option name="unit">ms</option>
+        </format>
+        <format type="color" field="avg(e)">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+        <format type="color" field="median(e)">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+                <format type="color" field="p95(e)">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Kolonneutvalg</title>
+      <table>
+        <search>
+          <query>index=application_profiling source=logService aid=0 @c="PL/PL/ColumnProvider.*/Load" $environment$
+| rex field=@c "^PL\/PL\/ColumnProvider\.(?&lt;Name&gt;.*)\/Load"         
+| stats avg(e), median(e), p95(e), count by Name
+| search count &gt; 10</query>
+          <earliest>$timerange.earliest$</earliest>
+          <latest>$timerange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="number" field="avg(e)">
+          <option name="unit">ms</option>
+        </format>
+        <format type="number" field="median(e)">
+          <option name="unit">ms</option>
+        </format>
+        <format type="number" field="p95(e)">
+          <option name="unit">ms</option>
+        </format>
+        <format type="color" field="avg(e)">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+                <format type="color" field="median(e)">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+                <format type="color" field="p95(e)">
+          <colorPalette type="list">[#53A051,#F8BE34,#DC4E41]</colorPalette>
+          <scale type="threshold">1000,3000</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
